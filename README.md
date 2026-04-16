@@ -1,6 +1,13 @@
-# 📊 Dashboard Analisis Dinamika Pembangunan Manusia (IPM) Jawa Timur
+---
+title: Dashboard IPM Jatim
+emoji: 📊
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/) 
+# 📊 Dashboard Analisis Dinamika Pembangunan Manusia (IPM) Jawa Timur
 
 ## 📝 Deskripsi Proyek
 Dashboard ini merupakan platform analitik interaktif yang dirancang untuk membedah profil **Indeks Pembangunan Manusia (IPM)** di 38 Kabupaten/Kota Provinsi Jawa Timur (Data 2019-2024). 
@@ -12,7 +19,7 @@ Proyek ini tidak hanya menyajikan visualisasi data, tetapi juga mengintegrasikan
 2. **Indeks Konvergensi (Novelty):** Metrik khusus untuk mengukur kecepatan suatu daerah dalam mengejar ketertinggalan menuju target IPM ideal (Benchmark: 85).
 3. **Dekonstruksi Komponen:** Analisis korelasi dinamis antar komponen pendidikan (HLS, RLS, APS) dan kesehatan (UHH).
 4. **Economic Anomaly Detection:** Deteksi otomatis fenomena *Resource Curse* (Kutukan Sumber Daya) pada daerah dengan PDRB tinggi namun ketimpangan tinggi.
-5. **AI Clustering (K-Means):** Pengelompokan wilayah secara otomatis ke dalam klaster Prioritas, Berkemban, dan Mandiri menggunakan evaluasi *Silhouette Score*.
+5. **AI Clustering (K-Means):** Pengelompokan wilayah secara otomatis ke dalam klaster Prioritas, Berkembang, dan Mandiri menggunakan evaluasi *Silhouette Score*.
 
 ## 📂 Struktur Data & Variabel
 Data yang digunakan bersumber dari BPS Jawa Timur dengan variabel sebagai berikut:
@@ -25,20 +32,21 @@ Data yang digunakan bersumber dari BPS Jawa Timur dengan variabel sebagai beriku
 * **TPT:** Tingkat Pengangguran Terbuka.
 
 ## 🛠️ Teknologi yang Digunakan
-* **Bahasa Pemrograman:** Python 3.x
-* **Framework Dashboard:** [Streamlit](https://streamlit.io/)
+* **Bahasa Pemrograman:** Python 3.9+
+* **Framework Dashboard:** Plotly Dash & Dash Bootstrap Components
 * **Visualisasi Data:** Plotly Express (Interactive Charts)
-* **Analisis Statistik & ML:** Pandas, Scikit-Learn (StandardScaler, KMeans, Silhouette Score)
-* **Styling:** Custom CSS & HTML Injection untuk UI/UX yang modern.
+* **Analisis Statistik & ML:** Pandas, Scikit-Learn (StandardScaler, KMeans)
+* **Styling:** Custom CSS & UI Modern.
 
 ## ⚙️ Cara Menjalankan Secara Lokal
 Jika Anda ingin mencoba project ini di komputer Anda:
 
 1. Clone repository ini:
-   ```git clone [https://github.com/username-kamu/nama-repo-kamu.git](https://github.com/username-kamu/nama-repo-kamu.git)```
+   ```bash
+   git clone [https://github.com/radamm/Dashboard_IPM_Jatim.git](https://github.com/radamm/Dashboard_IPM_Jatim.git)
 
 2. Install library yang dibutuhkan:
     ```pip install -r requirements.txt```'
 
 3. Jalankan aplikasi:
-    ```streamlit run app.py```
+    ```python app_dash.py```
