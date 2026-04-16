@@ -76,6 +76,8 @@ app.index_string = '''
 
             /* Perbaikan agar teks di dalam info-box tetap kontras */
             .dark-mode .info-box { color: #f8fafc !important; }
+            .teks-stats { color: #1e293b; }
+            .dark-mode .teks-stats { color: #f8fafc !important; }
         </style>
     </head>
     <body>
@@ -130,8 +132,7 @@ sidebar = html.Div([
     # --- BAGIAN ATAS (Logo & Menu) ---
     html.Div([
         html.Div([
-            html.H3([html.Span("JATIM", style={"color": "#0284c7"}), html.Span("STATS", style={"color": "#1e293b", "fontWeight": "400"})], style={"fontWeight": "800", "letterSpacing": "1px", "marginBottom": "40px"})
-        ]),
+            html.H3([html.Span("JATIM", style={"color": "#0284c7"}), html.Span("STATS", className="teks-stats", style={"fontWeight": "400"})], style={"fontWeight": "800", "letterSpacing": "1px", "marginBottom": "40px"})        ]),
         html.Div([
             html.P("MENU UTAMA", style={"fontSize": "11px", "color": "#94a3b8", "fontWeight": "600", "letterSpacing": "1px", "marginBottom": "15px"}),
             dbc.Nav([
@@ -157,16 +158,9 @@ sidebar = html.Div([
 
 topbar = html.Div([
     html.Div([
-        html.H4("Dinamika Pembangunan Jatim", style={"margin": "0", "fontWeight": "700", "color": "#1e293b", "fontSize": "22px"}),
-        html.P("Analisis Interaktif 38 Kabupaten/Kota (2019-2024)", style={"margin": "0", "fontSize": "13px", "color": "#64748b"})
+        html.H4("Profil Pembangunan Jawa Timur", style={"margin": "0", "fontWeight": "700", "color": "#1e293b", "fontSize": "22px"}),
+        html.P("Statistik Kesejahteraan Rakyat dan Ekonomi Regional (2019-2024)", style={"margin": "0", "fontSize": "13px", "color": "#64748b"})
     ]),
-    html.Div([
-        html.Div([
-            html.I(className="fa-regular fa-bell text-muted me-4", style={"fontSize": "20px", "cursor": "pointer"}),
-            html.Span("Analyst Jatim", style={"fontWeight": "600", "fontSize": "14px", "marginRight": "10px"}),
-            html.Div(html.I(className="fa-solid fa-user"), style={"width": "35px", "height": "35px", "backgroundColor": "#f8fafc", "borderRadius": "50%", "display": "flex", "alignItems": "center", "justifyContent": "center", "border": "1px solid #e2e8f0"})
-        ], style={"display": "flex", "alignItems": "center"})
-    ])
 ], className="topbar")
 
 # Panel Filter Global
