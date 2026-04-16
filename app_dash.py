@@ -70,6 +70,12 @@ app.index_string = '''
             .dark-mode label {background-color: transparent !important;}
             .dark-mode .dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner th { background-color: #334155 !important; color: white !important; border-color: #475569 !important; }
             .dark-mode .dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner td { background-color: #1e293b !important; color: white !important; border-color: #475569 !important; }
+            /* Perbaikan label slider di dark mode */
+            .dark-mode .rc-slider-mark-text { color: #94a3b8 !important; }
+            .dark-mode .rc-slider-mark-text-active { color: #f8fafc !important; }
+
+            /* Perbaikan agar teks di dalam info-box tetap kontras */
+            .dark-mode .info-box { color: #f8fafc !important; }
         </style>
     </head>
     <body>
@@ -130,7 +136,8 @@ sidebar = html.Div([
             html.P("MENU UTAMA", style={"fontSize": "11px", "color": "#94a3b8", "fontWeight": "600", "letterSpacing": "1px", "marginBottom": "15px"}),
             dbc.Nav([
                 dbc.NavLink([html.I(className="fa-solid fa-chart-pie me-3"), "Dashboard"], href="/", id="link-dashboard", active="exact", style={"fontWeight": "500", "color": "#64748b", "padding": "12px 15px", "marginBottom": "10px", "borderRadius": "12px"}),
-                dbc.NavLink([html.I(className="fa-solid fa-table me-3"), "Eksplorasi Data"], href="/manage", id="link-manage", active="exact", style={"fontWeight": "500", "color": "#64748b", "padding": "12px 15px", "marginBottom": "10px", "borderRadius": "12px"}),
+                dbc.NavLink([html.I(className="fa-solid fa-table me-3"), "Dataset"], href="/manage", id="link-manage", active="exact", style={"fontWeight": "500", "color": "#64748b", "padding": "12px 15px", "marginBottom": "10px", "borderRadius": "12px"}),
+                dbc.NavLink([html.I(className="fa-solid fa-book-open me-3"), "Kamus & Eksplorasi Data"], href="/metadata", id="link-metadata", active="exact", style={"fontWeight": "500", "color": "#64748b", "padding": "12px 15px", "marginBottom": "10px", "borderRadius": "12px"}),
             ], vertical=True, pills=True)
         ])
     ]),
@@ -188,7 +195,7 @@ tabs_menu = html.Div([
             {'label': ' 🏠 Executive Summary', 'value': 'tab-1'},
             {'label': ' 🔍 Dekonstruksi IPM', 'value': 'tab-2'},
             {'label': ' ⚖️ Ekonomi & Ketimpangan', 'value': 'tab-3'},
-            {'label': ' 🤖 Machine Learning', 'value': 'tab-4'},
+            {'label': ' 🤖 Analisis Klaster', 'value': 'tab-4'},
         ],
         value='tab-1',
         inline=True,
@@ -217,15 +224,98 @@ app.layout = html.Div(id='app-wrapper', className='', children=[
     Output('page-content', 'children'),
     Output('link-dashboard', 'style'),
     Output('link-manage', 'style'),
-    # Output Settings DIHAPUS dari sini
+    Output('link-metadata', 'style'), # <--- TAMBAHAN OUTPUT BARU
     Input('url', 'pathname')
 )
 def display_page(pathname):
     inactive_style = {"fontWeight": "500", "color": "#64748b", "padding": "12px 15px", "marginBottom": "10px", "borderRadius": "12px", "backgroundColor": "transparent"}
     active_style = {"fontWeight": "600", "color": "#0284c7", "backgroundColor": "#e0f2fe", "borderRadius": "12px", "padding": "12px 15px", "marginBottom": "10px"}
 
-    if pathname == '/manage':
-        # HALAMAN EKSPLORASI DATA MENTAH
+    # ---------------------------------------------------------
+    # HALAMAN 1: KAMUS & PROFIL DATA (BARU)
+    # ---------------------------------------------------------
+    if pathname == '/metadata':
+        # 1. Data Kamus Variabel (Statis)
+        data_kamus = [
+            {"Variabel": "Tahun", "Deskripsi": "Menunjukkan periode waktu pengamatan data pembangunan manusia dan ekonomi di Jawa Timur.", "Satuan / Bentuk Data": "Tahun"},
+            {"Variabel": "Kabupaten/Kota", "Deskripsi": "Menunjukkan nama wilayah administratif yang menjadi unit analisis.", "Satuan / Bentuk Data": "Kategori"},
+            {"Variabel": "Kawasan", "Deskripsi": "Menunjukkan kelompok kawasan fungsional wilayah (misalnya GKS, Madura, Tapal Kuda, dll).", "Satuan / Bentuk Data": "Kategori"},
+            {"Variabel": "IPM", "Deskripsi": "Indeks Pembangunan Manusia yang menggambarkan kualitas hidup masyarakat berdasarkan pendidikan, kesehatan, dan standar hidup layak.", "Satuan / Bentuk Data": "Indeks"},
+            {"Variabel": "UHH", "Deskripsi": "Umur Harapan Hidup, menggambarkan rata-rata perkiraan lama hidup penduduk.", "Satuan / Bentuk Data": "Tahun"},
+            {"Variabel": "HLS", "Deskripsi": "Harapan Lama Sekolah, menunjukkan lamanya pendidikan formal yang diharapkan akan ditempuh penduduk usia sekolah.", "Satuan / Bentuk Data": "Tahun"},
+            {"Variabel": "RLS", "Deskripsi": "Rata-rata Lama Sekolah, menunjukkan rata-rata jumlah tahun pendidikan yang telah ditempuh penduduk.", "Satuan / Bentuk Data": "Tahun"},
+            {"Variabel": "PDRB Per Kapita", "Deskripsi": "Nilai rata-rata output ekonomi per penduduk di suatu wilayah. Digunakan untuk melihat tingkat kesejahteraan ekonomi daerah.", "Satuan / Bentuk Data": "Juta Rupiah"},
+            {"Variabel": "Persentase Miskin", "Deskripsi": "Persentase penduduk miskin di suatu wilayah. Menunjukkan tingkat kerentanan ekonomi masyarakat.", "Satuan / Bentuk Data": "Persen (%)"},
+            {"Variabel": "Gini Ratio", "Deskripsi": "Indikator ketimpangan distribusi pendapatan di suatu wilayah.", "Satuan / Bentuk Data": "Rasio"},
+            {"Variabel": "TPT", "Deskripsi": "Tingkat Pengangguran Terbuka.", "Satuan / Bentuk Data": "Persen (%)"}
+        ]
+
+        # 2. Data Statistika Deskriptif (Dihitung Otomatis Dinamis)
+        interpretasi_dict = {
+            "IPM": "Sebagian besar daerah berada pada tingkat pembangunan menengah-tinggi.",
+            "UHH": "Variasi kesehatan relatif kecil antarwilayah.",
+            "RLS": "Kesenjangan pendidikan masih terlihat cukup jelas.",
+            "HLS": "Harapan pendidikan relatif baik di mayoritas wilayah.",
+            "PDRB_Per_Kapita": "Terdapat kesenjangan ekonomi yang sangat tinggi antarwilayah.",
+            "Persentase_Miskin": "Tingkat kemiskinan masih cukup bervariasi.",
+            "Gini_Ratio": "Ketimpangan pendapatan relatif moderat.",
+            "TPT": "Pengangguran antarwilayah masih cukup beragam."
+        }
+        
+        data_stats = []
+        if not df_master.empty:
+            kolom_numerik = ['IPM', 'UHH', 'RLS', 'HLS', 'PDRB_Per_Kapita', 'Persentase_Miskin', 'Gini_Ratio', 'TPT']
+            for col in kolom_numerik:
+                if col in df_master.columns:
+                    data_stats.append({
+                        "Variabel": col,
+                        "Rata-rata": round(df_master[col].mean(), 2),
+                        "Median": round(df_master[col].median(), 2),
+                        "Minimum": round(df_master[col].min(), 2),
+                        "Maksimum": round(df_master[col].max(), 2),
+                        "Std. Deviasi": round(df_master[col].std(), 2),
+                        "Interpretasi Singkat": interpretasi_dict.get(col, "-")
+                    })
+
+        page_meta = html.Div([
+            html.Div([
+                html.Div("📖 Kamus & Profil Data", className="sec-title", style={"borderBottom": "none", "marginBottom": "0"}),
+                html.Div("Metadata & Ringkasan Statistik", style={"fontSize": "13px", "color": "#64748b", "fontWeight": "500"})
+            ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "marginBottom": "20px"}),
+            
+            # Tabel 1: Kamus Data
+            html.Div([
+                html.Div("Kamus Variabel (Metadata)", className="sec-title", style={"fontSize": "16px"}),
+                dash_table.DataTable(
+                    data=data_kamus,
+                    columns=[{'name': i, 'id': i} for i in ["Variabel", "Deskripsi", "Satuan / Bentuk Data"]],
+                    style_table={'overflowX': 'auto', 'borderRadius': '10px', 'border': '1px solid #e2e8f0', 'marginBottom': '30px'},
+                    style_header={'backgroundColor': '#f8fafc', 'fontWeight': 'bold', 'color': '#1e293b', 'padding': '12px'},
+                    style_cell={'textAlign': 'left', 'padding': '12px', 'fontFamily': 'Poppins', 'fontSize': '13px'},
+                    style_data={'whiteSpace': 'normal', 'height': 'auto'}, # Agar teks deskripsi bisa wrap/turun ke bawah
+                    style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#f8fafc'}]
+                ),
+                
+                # Tabel 2: Statistika Deskriptif
+                html.Div("Statistika Deskriptif (Keseluruhan Tahun)", className="sec-title", style={"fontSize": "16px"}),
+                dash_table.DataTable(
+                    data=data_stats,
+                    columns=[{'name': i, 'id': i} for i in ["Variabel", "Rata-rata", "Median", "Minimum", "Maksimum", "Std. Deviasi", "Interpretasi Singkat"]],
+                    style_table={'overflowX': 'auto', 'borderRadius': '10px', 'border': '1px solid #e2e8f0'},
+                    style_header={'backgroundColor': '#f8fafc', 'fontWeight': 'bold', 'color': '#1e293b', 'padding': '12px'},
+                    style_cell={'textAlign': 'left', 'padding': '12px', 'fontFamily': 'Poppins', 'fontSize': '13px'},
+                    style_data={'whiteSpace': 'normal', 'height': 'auto'},
+                    style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#f8fafc'}]
+                )
+            ], className="card-custom")
+        ])
+        return page_meta, inactive_style, inactive_style, active_style
+
+    # ---------------------------------------------------------
+    # HALAMAN 2: EKSPLORASI DATA MENTAH
+    # ---------------------------------------------------------
+    elif pathname == '/manage':
+        # (Kode isi page_manage biarkan UTUH sama persis seperti kode aslimu sebelumnya)
         page_manage = html.Div([
             html.Div([
                 html.Div("📊 Database Pembangunan Jatim", className="sec-title", style={"borderBottom": "none", "marginBottom": "0"}),
@@ -233,47 +323,28 @@ def display_page(pathname):
             ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "marginBottom": "20px"}),
             
             html.Div([
-                # PANEL FILTER DINAMIS (Bisa pilih kolom apa saja)
                 html.Div([
                     dbc.Row([
-                        # 1. Kotak Pencarian Teks
                         dbc.Col([
                             html.Label("🔍 Cari Daerah / Kawasan", style={"fontSize": "12px", "fontWeight": "600", "color": "#64748b", "marginBottom": "8px"}),
                             dbc.Input(id='search-manage-text', placeholder="Ketik nama kota atau kawasan...", style={"borderRadius": "8px"})
                         ], width=4),
-                        
-                        # 2. Dropdown Pilih Kolom Numerik
                         dbc.Col([
                             html.Label("📊 Pilih Indikator", style={"fontSize": "12px", "fontWeight": "600", "color": "#64748b", "marginBottom": "8px"}),
                             dcc.Dropdown(
                                 id='filter-manage-col',
-                                options=[
-                                    {'label': 'IPM', 'value': 'IPM'},
-                                    {'label': 'PDRB Per Kapita', 'value': 'PDRB_Per_Kapita'},
-                                    {'label': 'Persentase Miskin', 'value': 'Persentase_Miskin'},
-                                    {'label': 'Gini Ratio', 'value': 'Gini_Ratio'},
-                                    {'label': 'Tingkat Pengangguran (TPT)', 'value': 'TPT'}
-                                ],
-                                placeholder="Pilih kolom...",
-                                style={"borderRadius": "8px"}
+                                options=[{'label': 'IPM', 'value': 'IPM'}, {'label': 'PDRB Per Kapita', 'value': 'PDRB_Per_Kapita'}, {'label': 'Persentase Miskin', 'value': 'Persentase_Miskin'}, {'label': 'Gini Ratio', 'value': 'Gini_Ratio'}, {'label': 'Tingkat Pengangguran (TPT)', 'value': 'TPT'}],
+                                placeholder="Pilih kolom...", style={"borderRadius": "8px"}
                             )
                         ], width=3),
-                        
-                        # 3. Dropdown Kondisi (Lebih dari / Kurang dari)
                         dbc.Col([
                             html.Label("⚖️ Kondisi", style={"fontSize": "12px", "fontWeight": "600", "color": "#64748b", "marginBottom": "8px"}),
                             dcc.Dropdown(
                                 id='filter-manage-op',
-                                options=[
-                                    {'label': 'Lebih Besar (>=)', 'value': '>='},
-                                    {'label': 'Lebih Kecil (<=)', 'value': '<='}
-                                ],
-                                value='>=', clearable=False,
-                                style={"borderRadius": "8px"}
+                                options=[{'label': 'Lebih Besar (>=)', 'value': '>='}, {'label': 'Lebih Kecil (<=)', 'value': '<='}],
+                                value='>=', clearable=False, style={"borderRadius": "8px"}
                             )
                         ], width=2),
-                        
-                        # 4. Input Angka
                         dbc.Col([
                             html.Label("🔢 Masukkan Angka", style={"fontSize": "12px", "fontWeight": "600", "color": "#64748b", "marginBottom": "8px"}),
                             dbc.Input(id='filter-manage-val', type="number", placeholder="Contoh: 10.5", style={"borderRadius": "8px"})
@@ -281,13 +352,11 @@ def display_page(pathname):
                     ])
                 ], style={"backgroundColor": "#f8fafc", "padding": "18px 20px", "borderRadius": "12px", "border": "1px solid #e2e8f0", "marginBottom": "20px"}),
                 
-                # Tabel Data (Tetap sama)
                 dash_table.DataTable(
                     id='table-manage-data', 
                     data=df_master.to_dict('records') if not df_master.empty else [],
                     columns=[{'name': i, 'id': i} for i in df_master.columns],
-                    page_size=15, 
-                    sort_action="native",
+                    page_size=15, sort_action="native",
                     style_table={'overflowX': 'auto', 'borderRadius': '10px', 'border': '1px solid #e2e8f0'},
                     style_header={'backgroundColor': '#f8fafc', 'fontWeight': 'bold', 'color': '#1e293b', 'padding': '12px'},
                     style_cell={'textAlign': 'left', 'padding': '12px', 'fontFamily': 'Poppins', 'fontSize': '13px'},
@@ -295,16 +364,18 @@ def display_page(pathname):
                 )
             ], className="card-custom")
         ])
-        return page_manage, inactive_style, active_style
+        return page_manage, inactive_style, active_style, inactive_style
 
+    # ---------------------------------------------------------
+    # HALAMAN 3: DASHBOARD UTAMA (DEFAULT)
+    # ---------------------------------------------------------
     else:
-        # HALAMAN DEFAULT: DASHBOARD UTAMA
         page_dashboard = html.Div([
             filter_panel,
             tabs_menu,
             html.Div(id='main-content-container')
         ])
-        return page_dashboard, active_style, inactive_style # Hanya kembalikan 3 hal sekarang
+        return page_dashboard, active_style, inactive_style, inactive_style
 
 # ---------------------------------------------------------
 # CALLBACK: TOGGLE LIGHT / DARK MODE (UI Switcher)
@@ -369,146 +440,162 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
 
     df_filtered = df_master[(df_master['Tahun'] == sel_year) & (df_master['Kabupaten_Kota'].isin(sel_kab))]
     
-# ---------------------------------------------------------
-    # TAB 1: EXECUTIVE SUMMARY (TANPA PETA - SUPER RINGAN)
+    # ---------------------------------------------------------
+    # TAB 1: EXECUTIVE SUMMARY (REVISI FINAL: OPSI 2 & VISUAL LENGKAP)
     # ---------------------------------------------------------
     if tab == 'tab-1':
-        avg_ipm = df_filtered['IPM'].mean()
+        # --- OPSI 2: Mengambil Angka Resmi Provinsi dari PROV_TREND ---
+        if sel_year in PROV_TREND["years"]:
+            idx_year = PROV_TREND["years"].index(sel_year)
+            official_prov_ipm = PROV_TREND["ipm"][idx_year]
+            kpi_sub_text = "Data Agregat Resmi BPS Jatim"
+        else:
+            official_prov_ipm = df_filtered['IPM'].mean()
+            kpi_sub_text = "Rerata Aritmetik Wilayah"
+
         avg_miskin = df_filtered['Persentase_Miskin'].mean()
         kab_tertinggi = df_filtered.loc[df_filtered['IPM'].idxmax()]
         kab_terendah = df_filtered.loc[df_filtered['IPM'].idxmin()]
         
         PLOTLY_TEMPLATE = "plotly_dark" if theme == 'dark' else "plotly_white"
         
-        # 1. Grafik Peringkat (Full Lebar + GARIS RATA-RATA)
+        # --- 1. Komparasi Capaian IPM (Bar Horizontal) ---
         df_bar = df_filtered.sort_values(by="IPM", ascending=True)
         fig_bar = px.bar(df_bar, x="IPM", y="Kabupaten_Kota", orientation='h', text="IPM", color="IPM", color_continuous_scale="Teal")
-        rata_ipm_sekarang = df_filtered['IPM'].mean()
-        fig_bar.add_vline(x=rata_ipm_sekarang, line_dash="dash", line_color="#ef4444", annotation_text=f"Rata-rata: {rata_ipm_sekarang:.2f}", annotation_position="bottom right")
+        
+        # Garis Rerata Menggunakan Angka Resmi
+        fig_bar.add_vline(x=official_prov_ipm, line_dash="dash", line_color="#ef4444", 
+                          annotation_text=f"IPM Jatim: {official_prov_ipm:.2f}", annotation_position="bottom right")
+        
         fig_bar.update_traces(texttemplate='%{text:.2f}', textposition='outside')
         fig_bar.update_layout(
-            template=PLOTLY_TEMPLATE, height=450, margin=dict(l=0, r=30, t=10, b=0), 
+            template=PLOTLY_TEMPLATE, height=550, margin=dict(l=0, r=30, t=10, b=0), 
             showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            xaxis_title="Indeks Pembangunan Manusia", yaxis_title="",
             yaxis={'categoryorder':'total ascending', 'tickfont': {'size': 9}}
         )
 
-        # 2. Tren IPM Jatim (+ GARIS COVID)
-        df_prov = pd.DataFrame(PROV_TREND)
-        fig_line = px.line(df_prov, x="years", y="ipm", markers=True)
-        fig_line.update_traces(line_color="#0284c7", line_width=4, marker=dict(size=10, color="#059669"))
-        fig_line.add_vline(x=2020, line_dash="dot", line_color="#e11d48", annotation_text="Puncak COVID-19", annotation_position="top right", annotation_font_color="#e11d48")
-        fig_line.update_layout(template=PLOTLY_TEMPLATE, height=350, margin=dict(l=0, r=0, t=10, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-
-        # 3. Grafik Anomali
-        fig_scatter = px.scatter(df_filtered, x="PDRB_Per_Kapita", y="IPM", size="Persentase_Miskin", color="Kawasan", hover_name="Kabupaten_Kota")
-        fig_scatter.update_layout(template=PLOTLY_TEMPLATE, height=350, margin=dict(l=0, r=0, t=10, b=0), showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-
-        # 4. Konvergensi & Teks Insight
+        # --- 2. Analisis Konvergensi ---
         if sel_year == 2019:
-            konvergensi_content = html.Div("ℹ️ Silakan pilih tahun selain 2019 di Panel Kontrol atas untuk melihat laju konvergensi (kecepatan mengejar ketertinggalan).", className="insight-box")
+            konvergensi_content = html.Div("Analisis konvergensi tersedia untuk periode pasca-tahun dasar 2019.", className="insight-box")
         else:
             df_2019 = df_master[(df_master['Tahun'] == 2019) & (df_master['Kabupaten_Kota'].isin(sel_kab))][['Kabupaten_Kota', 'IPM']].rename(columns={'IPM': 'IPM_2019'})
             df_curr = df_filtered[['Kabupaten_Kota', 'IPM']].rename(columns={'IPM': 'IPM_Current'})
             df_conv = pd.merge(df_curr, df_2019, on='Kabupaten_Kota')
             target_ipm = 85.0 
-            df_conv['Gap_Awal'] = target_ipm - df_conv['IPM_2019']
-            df_conv['Gap_Akhir'] = target_ipm - df_conv['IPM_Current']
-            df_conv['Gap_Awal'] = df_conv['Gap_Awal'].replace(0, 0.001) 
-            df_conv['Indeks_Konvergensi'] = ((1 - (df_conv['Gap_Akhir'] / df_conv['Gap_Awal'])) * 100).round(2)
+            df_conv['Indeks_Konvergensi'] = ((1 - ((target_ipm - df_conv['IPM_Current']) / (target_ipm - df_conv['IPM_2019']))) * 100).round(2)
             df_conv = df_conv.sort_values('Indeks_Konvergensi', ascending=True)
             
             fig_conv = px.bar(df_conv, x="Indeks_Konvergensi", y="Kabupaten_Kota", orientation='h', text="Indeks_Konvergensi", color="Indeks_Konvergensi", color_continuous_scale="algae")
-            fig_conv.update_traces(texttemplate='+%{text:.2f}%', textposition='outside')
-            fig_conv.update_layout(template=PLOTLY_TEMPLATE, height=420, margin=dict(l=0, r=40, t=10, b=0), coloraxis_showscale=False, xaxis_title="% Mengejar Target (Benchmark: IPM 85)", yaxis_title="", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis={'tickfont': {'size': 9}})
-            
-            konvergensi_content = html.Div([
-                dcc.Graph(figure=fig_conv, config={'displayModeBar': False}),
-                html.Div([
-                    html.B("Insight Novelty: Mengukur 'Akselerasi Kejar-kejaran'."), html.Br(),
-                    "Indeks ini menggunakan benchmark IPM 85 sebagai standar ideal. Jika sebuah daerah memiliki angka ", html.B("+25%"), ", artinya mereka telah berhasil memangkas 25% jarak ketertinggalan mereka menuju standar ideal sejak 2019."
-                ], className="insight-box", style={"fontSize": "12.5px"})
-            ])
+            fig_conv.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+            fig_conv.update_layout(
+                template=PLOTLY_TEMPLATE, height=550, margin=dict(l=0, r=40, t=10, b=0), 
+                coloraxis_showscale=False, xaxis_title="Laju Konvergensi (%)", yaxis_title="", 
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                yaxis={'tickfont': {'size': 9}}
+            )
+            konvergensi_content = dcc.Graph(figure=fig_conv, config={'displayModeBar': False})
+
+        # --- 3. Dinamika Longitudinal ---
+        df_prov = pd.DataFrame(PROV_TREND)
+        fig_line = px.line(df_prov, x="years", y="ipm", markers=True)
+        fig_line.update_traces(line_color="#0284c7", line_width=4, marker=dict(size=10, color="#059669"))
+        fig_line.add_vline(x=2020, line_dash="dot", line_color="#e11d48", annotation_text="Krisis Pandemi", annotation_position="top right")
+        fig_line.update_layout(template=PLOTLY_TEMPLATE, height=400, margin=dict(l=0, r=0, t=10, b=0), xaxis_title="Periode", yaxis_title="Skor IPM", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+
+        # --- 4. Evaluasi Disparitas (DENGAN LEGENDA & LABEL KEMBALI) ---
+        fig_scatter = px.scatter(df_filtered, x="PDRB_Per_Kapita", y="IPM", size="Persentase_Miskin", color="Kawasan", 
+                                 hover_name="Kabupaten_Kota", text="Kabupaten_Kota", 
+                                 labels={"Kawasan": "Klasifikasi Wilayah"})
+        fig_scatter.update_traces(textposition='top center', textfont=dict(size=9), marker=dict(sizemin=5))
+        fig_scatter.update_layout(
+            template=PLOTLY_TEMPLATE, height=400, margin=dict(l=0, r=0, t=10, b=0), 
+            showlegend=True, # Legenda Kembali
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis_title="PDRB per Kapita (Juta Rp)", yaxis_title="Skor IPM", 
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
+        )
 
         return html.Div([
-            html.Div("🎯 Indikator Kinerja Utama", className="sec-title"),
+            html.Div("🎯 Indikator Kinerja Utama (IKU)", className="sec-title"),
             dbc.Row([
-                dbc.Col(html.Div([html.Div("Rata-rata IPM", className="kpi-title"), html.Div(f"{avg_ipm:.2f}", className="kpi-val", style={"color": "#0ea5e9"}), html.Div(f"Tahun {sel_year}", className="kpi-sub")], className="card-custom"), width=3),
-                dbc.Col(html.Div([html.Div("Rata-rata Kemiskinan", className="kpi-title"), html.Div(f"{avg_miskin:.2f}%", className="kpi-val", style={"color": "#f43f5e"}), html.Div(f"Indikator Kerentanan", className="kpi-sub")], className="card-custom"), width=3),
-                dbc.Col(html.Div([html.Div("IPM Tertinggi", className="kpi-title"), html.Div(f"{kab_tertinggi['IPM']:.2f}", className="kpi-val", style={"color": "#10b981"}), html.Div(f"🏆 {kab_tertinggi['Kabupaten_Kota']}", className="kpi-sub")], className="card-custom"), width=3),
-                dbc.Col(html.Div([html.Div("IPM Terendah", className="kpi-title"), html.Div(f"{kab_terendah['IPM']:.2f}", className="kpi-val", style={"color": "#f59e0b"}), html.Div(f"⚠️ {kab_terendah['Kabupaten_Kota']}", className="kpi-sub")], className="card-custom"), width=3),
+                dbc.Col(html.Div([html.Div("IPM Jawa Timur", className="kpi-title"), html.Div(f"{official_prov_ipm:.2f}", className="kpi-val", style={"color": "#0ea5e9"}), html.Div(kpi_sub_text, className="kpi-sub")], className="card-custom"), width=3),
+                dbc.Col(html.Div([html.Div("Rerata Kemiskinan", className="kpi-title"), html.Div(f"{avg_miskin:.2f}%", className="kpi-val", style={"color": "#f43f5e"}), html.Div(f"Indikator Eksklusi Sosial", className="kpi-sub")], className="card-custom"), width=3),
+                dbc.Col(html.Div([html.Div("Capaian Maksimum", className="kpi-title"), html.Div(f"{kab_tertinggi['IPM']:.2f}", className="kpi-val", style={"color": "#10b981"}), html.Div(f"Wilayah: {kab_tertinggi['Kabupaten_Kota']}", className="kpi-sub")], className="card-custom"), width=3),
+                dbc.Col(html.Div([html.Div("Capaian Minimum", className="kpi-title"), html.Div(f"{kab_terendah['IPM']:.2f}", className="kpi-val", style={"color": "#f59e0b"}), html.Div(f"Wilayah: {kab_terendah['Kabupaten_Kota']}", className="kpi-sub")], className="card-custom"), width=3),
             ]),
             
-            # Baris 1: Peringkat IPM Jadi Lebar Penuh (Kelihatan Lebih Megah)
             dbc.Row([
                 dbc.Col(html.Div([
-                    html.Div(f"🏆 Peringkat IPM", className="sec-title"),
-                    dcc.Graph(figure=fig_bar, config={'displayModeBar': False})
-                ], className="card-custom"), width=12),
+                    html.Div("📊 Komparasi Stratifikasi Capaian IPM Antar Wilayah", className="sec-title"),
+                    dcc.Graph(figure=fig_bar, config={'displayModeBar': False}),
+                    html.Div([html.B("Analisis Komparatif: "), "Lebarnya rentang skor IPM mengindikasikan signifikansi disparitas kualitas hidup antarwilayah. Hal ini mengisyaratkan perlunya afirmasi kebijakan alokasi belanja daerah untuk meminimalkan ketimpangan spasial terhadap pusat aglomerasi."], className="insight-box")
+                ], className="card-custom"), width=6),
+
+                dbc.Col(html.Div([
+                    html.Div("⭐ Analisis Konvergensi: Laju Reduksi Kesenjangan", className="sec-title"),
+                    konvergensi_content,
+                    html.Div([html.B("Analisis Dinamis: "), "Pendekatan konvergensi mengukur laju suatu wilayah dalam mereduksi kesenjangan menuju ambang batas ideal (skor IPM 85) dengan referensi tahun dasar 2019. Capaian konvergensi yang rendah pada wilayah maju dapat menjadi indikator awal terjadinya saturasi pertumbuhan."], className="insight-box")
+                ], className="card-custom"), width=6),
             ]),
             
-            # Baris 2: Tren & Anomali (Dengan Insight Sejajar)
             dbc.Row([
                 dbc.Col(html.Div([
-                    html.Div("📈 Tren IPM Provinsi", className="sec-title"), 
+                    html.Div("📈 Dinamika Longitudinal Capaian IPM Provinsi", className="sec-title"), 
                     dcc.Graph(figure=fig_line, config={'displayModeBar': False}),
-                    html.Div([
-                        html.B("Insight Tren: "), 
-                        "Meskipun sempat mengalami tekanan saat ", html.B("Puncak Pandemi (2020)"), ", tren pembangunan manusia di Jawa Timur menunjukkan resiliensi dengan kurva yang kembali positif di tahun-tahun berikutnya."
-                    ], className="insight-box", style={"fontSize": "12.5px"})
+                    html.Div([html.B("Analisis Tren: "), "Kurva runtun waktu mengonfirmasi resiliensi struktural pembangunan manusia di Jawa Timur. Walaupun sempat terkontraksi akibat krisis pandemi, tren pertumbuhan kembali terakselerasi sejalan dengan stabilisasi makroekonomi daerah."], className="insight-box")
                 ], className="card-custom"), width=5),
                 
                 dbc.Col(html.Div([
-                    html.Div(f"💡 Anomali: Paradoks Kekayaan Daerah", className="sec-title"), 
+                    html.Div("💡 Evaluasi Disparitas Output Ekonomi & Kualitas Manusia", className="sec-title"), 
                     dcc.Graph(figure=fig_scatter, config={'displayModeBar': False}),
-                    html.Div([
-                        html.B("Interpretasi Paradoks: "), 
-                        "Makin kanan posisi daerah (kaya), idealnya makin atas posisinya (maju). Titik di ", html.B("Kanan Bawah"), " mengindikasikan PDRB sangat tinggi namun IPM rendah. Uang diduga hanya dinikmati industri besar."
-                    ], className="insight-box", style={"fontSize": "12.5px"})
+                    html.Div([html.B("Interpretasi Disparitas: "), "Wilayah dengan PDRB tinggi namun IPM rendah merepresentasikan pola pertumbuhan ekonomi yang kurang inklusif. Fenomena ini mengindikasikan bahwa akumulasi kapital belum bertransmisi secara optimal terhadap peningkatan kualitas pelayanan publik."], className="insight-box")
                 ], className="card-custom"), width=7),
             ]),
-
-            # Baris 3: Konvergensi
-            dbc.Row([
-                dbc.Col(html.Div([
-                    html.Div("⭐ Indeks Konvergensi IPM (Novelty HKI)", className="sec-title"),
-                    konvergensi_content
-                ], className="card-custom"), width=12)
-            ])
         ])
 
     # ---------------------------------------------------------
-    # TAB 2: DEKONSTRUKSI IPM (Hanya Kerangka & Input)
+    # TAB 2: DEKOMPOSISI IPM
     # ---------------------------------------------------------
     elif tab == 'tab-2':
         return html.Div([
-            html.Div("🛠️ Eksplorasi Komponen & Analisis Hubungan", className="sec-title"),
+            html.Div("🔍 Dekomposisi IPM & Analisis Korelasi Sektoral", className="sec-title"),
+            
+            html.Div([
+                html.B("Rasionalisasi Analisis: "),
+                "IPM merupakan indeks komposit. Halaman ini bertujuan untuk mendekomposisi (mengurai) IPM menjadi indikator penyusun dasarnya. Melalui analisis korelasi silang (cross-sectoral), evaluasi difokuskan untuk mengidentifikasi apakah kemajuan di satu sektor berjalan sinkron dengan sektor lainnya, atau justru mengindikasikan adanya ketimpangan prioritas pembangunan antarwilayah."
+            ], className="insight-box", style={"marginBottom": "20px"}),
+
+            # --- KOTAK DROPDOWN (UI FIX: zIndex 999 & margin-bottom) ---
             html.Div([
                 dbc.Row([
                     dbc.Col([
-                        html.Label("Pilih Indikator Sumbu X:", style={"fontWeight": "600", "fontSize": "13px"}),
+                        html.Label("Variabel Sumbu X (Independen):", style={"fontWeight": "600", "fontSize": "13px"}),
                         dcc.Dropdown(id='tab2-x', options=[{'label': k, 'value': v} for k, v in opsi_indikator.items()], value="RLS", clearable=False, style={"borderRadius": "8px"})
                     ], width=6),
                     dbc.Col([
-                        html.Label("Pilih Indikator Sumbu Y:", style={"fontWeight": "600", "fontSize": "13px"}),
+                        html.Label("Variabel Sumbu Y (Dependen):", style={"fontWeight": "600", "fontSize": "13px"}),
                         dcc.Dropdown(id='tab2-y', options=[{'label': k, 'value': v} for k, v in opsi_indikator.items()], value="UHH", clearable=False, style={"borderRadius": "8px"})
                     ], width=6)
                 ]),
-            ], className="card-custom", style={"padding": "15px 24px"}),
+            ], className="card-custom", style={"padding": "15px 24px", "marginBottom": "25px", "position": "relative", "zIndex": "999"}), 
             
-            # Wadah Kosong untuk Grafik & Insight Tab 2 (Akan diisi oleh callback ke-2)
+            # Wadah Kosong untuk Grafik
             html.Div(id='tab2-output-container')
         ])
 
-# ---------------------------------------------------------
-    # TAB 3: EKONOMI & KETIMPANGAN (Dengan Background Gradient)
+    # ---------------------------------------------------------
+    # TAB 3: EVALUASI INKLUSIVITAS EKONOMI
     # ---------------------------------------------------------
     elif tab == 'tab-3':
-        cols_tabel = ['Kabupaten_Kota', 'Kawasan', 'IPM', 'PDRB_Per_Kapita', 'Persentase_Miskin', 'Gini_Ratio', 'TPT', 'Garis_Kemiskinan']
-        
+        cols_tabel = ['Kabupaten_Kota', 'Kawasan', 'IPM', 'PDRB_Per_Kapita', 'Persentase_Miskin', 'Gini_Ratio', 'TPT']
+        if 'Garis_Kemiskinan' in df_filtered.columns:
+            cols_tabel.append('Garis_Kemiskinan')
+            
         # Urutkan dan Reset Index agar sesuai dengan baris tabel
         df_tabel = df_filtered[cols_tabel].sort_values(by='PDRB_Per_Kapita', ascending=False).reset_index(drop=True)
         
-        # --- RUMUS PEMBUAT BACKGROUND GRADIENT UNTUK DASH ---
+        # --- RUMUS PEMBUAT BACKGROUND GRADIENT ---
         def get_row_colors(df, col, color_type):
             styles = []
             if col not in df.columns: return styles
@@ -524,8 +611,8 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
                 elif color_type == 'green': r, g, b = 5, 150, 105
                 else: r, g, b = 225, 29, 72 # Merah
                 
-                alpha = 0.1 + (normalized * 0.8) # Transparansi dari pudar ke pekat
-                text_color = "white" if normalized > 0.6 else "black" # Teks putih jika background gelap
+                alpha = 0.1 + (normalized * 0.8) 
+                text_color = "white" if normalized > 0.6 else "black"
                 
                 styles.append({
                     'if': {'row_index': i, 'column_id': col},
@@ -534,7 +621,6 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
                 })
             return styles
             
-        # Terapkan gradient ke kolom-kolom tertentu
         color_styles = []
         color_styles += get_row_colors(df_tabel, 'IPM', 'blue')
         color_styles += get_row_colors(df_tabel, 'PDRB_Per_Kapita', 'green')
@@ -542,7 +628,7 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
         color_styles += get_row_colors(df_tabel, 'Gini_Ratio', 'red')
         color_styles += get_row_colors(df_tabel, 'TPT', 'red')
         
-        # --- FORMATTING TEXT TABEL (Biar ada % dan Rp) ---
+        # --- FORMATTING TEXT TABEL ---
         df_display = df_tabel.copy()
         df_display['Persentase_Miskin'] = df_display['Persentase_Miskin'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "")
         df_display['TPT'] = df_display['TPT'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "")
@@ -550,75 +636,83 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
         if 'Garis_Kemiskinan' in df_display.columns:
             df_display['Garis_Kemiskinan'] = df_display['Garis_Kemiskinan'].apply(lambda x: f"Rp {x:,.0f}" if pd.notnull(x) else "")
         
-        # Heatmap
-        cols_corr = ['IPM', 'PDRB_Per_Kapita', 'Persentase_Miskin', 'Gini_Ratio', 'TPT', 'Pengeluaran_Per_Kapita']
+        # Heatmap Korelasi
+        cols_corr = ['IPM', 'PDRB_Per_Kapita', 'Persentase_Miskin', 'Gini_Ratio', 'TPT']
+        if 'Pengeluaran_Per_Kapita' in df_filtered.columns: cols_corr.append('Pengeluaran_Per_Kapita')
+        
         corr_matrix = df_filtered[cols_corr].corr().round(2)
         fig_heat = px.imshow(corr_matrix, text_auto=True, aspect="auto", color_continuous_scale='Tealrose', zmin=-1, zmax=1)
         fig_heat.update_layout(template=PLOTLY_TEMPLATE, height=400, margin=dict(l=0, r=0, t=10, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
 
-        daerah_terkaya = df_tabel.iloc[0] # PDRB Terbesar
+        daerah_terkaya = df_tabel.iloc[0] 
         nama_daerah = daerah_terkaya['Kabupaten_Kota']
         pdrb_val = daerah_terkaya['PDRB_Per_Kapita']
         gini_val = daerah_terkaya['Gini_Ratio']
         miskin_val = daerah_terkaya['Persentase_Miskin']
         
         if miskin_val > 10.0 or gini_val > 0.350:
-            status_warna, status_teks, class_box = "#e11d48", "⚠️ Indikasi Anomali (Pertumbuhan Tidak Inklusif)", "danger-box"
-            kesimpulan = f"Meskipun {nama_daerah} adalah pusat perputaran uang terbesar di tabel Anda, kue ekonomi tersebut diduga kuat hanya berputar di segelintir sektor padat modal. Buktinya, tingkat kemiskinan atau ketimpangannya masih tergolong tinggi (belum menetes ke lapisan bawah)."
+            status_warna, status_teks, class_box = "#e11d48", "⚠️ Indikasi Pertumbuhan Eksklusif (Timpang)", "danger-box"
+            kesimpulan = f"Kendati menduduki peringkat agregat ekonomi (PDRB) tertinggi, tingginya angka kemiskinan dan ketimpangan mengindikasikan bahwa akumulasi kapital di {nama_daerah} berpotensi hanya terkonsentrasi pada sektor padat modal tanpa menciptakan efek distribusi kesejahteraan (trickle-down effect) yang masif bagi masyarakat marginal."
         else:
-            status_warna, status_teks, class_box = "#059669", "✅ Pertumbuhan Relatif Inklusif", "success-box"
-            kesimpulan = f"Kabar baik! {nama_daerah} berhasil memanfaatkan tingginya perputaran ekonomi untuk menekan angka kemiskinan dan menjaga pemerataan. Distribusi kesejahteraan berjalan cukup baik di sini."
+            status_warna, status_teks, class_box = "#059669", "✅ Indikasi Pertumbuhan Inklusif", "success-box"
+            kesimpulan = f"Analisis mengonfirmasi bahwa {nama_daerah} mampu mengonversi tingginya aktivitas makroekonomi menjadi peningkatan pemerataan sosial. Intervensi kebijakan terindikasi berhasil memitigasi ketimpangan pendapatan dan menekan angka kerentanan struktural."
 
         return html.Div([
-            html.Div("⚖️ Ekonomi, Ketimpangan, & Deteksi Anomali", className="sec-title"),
+            html.Div("⚖️ Evaluasi Inklusivitas Ekonomi & Distribusi Kesejahteraan", className="sec-title"),
             
-            # TEKS PENJELASAN ASLI YANG PANJANG & TIDAK MEPET
+            # --- RASIONALISASI ANALISIS (DI ATAS SEPERTI TAB 2) ---
             html.Div([
-                html.B("📖 Cara Membaca Skala Warna Tabel:"), html.Br(),
-                "Tabel ini menggunakan fitur Background Gradient agar Anda bisa menemukan daerah berprestasi atau bermasalah dalam hitungan detik tanpa membaca angkanya satu per satu.", html.Br(),
+                html.B("Rasionalisasi Analisis: "),
+                "Halaman ini menyajikan evaluasi inklusivitas pertumbuhan ekonomi melalui analisis keterkaitan antara output ekonomi dengan indikator kesejahteraan. Fokus utama adalah mengukur efektivitas transmisi pertumbuhan terhadap pengurangan kemiskinan dan pengangguran serta pemerataan pendapatan di tingkat wilayah."
+            ], className="insight-box", style={"marginBottom": "20px"}),
+            
+            # Insight Box Akademis untuk Tabel
+            html.Div([
+                html.B("Metodologi Pemetaan Visual:"), html.Br(),
+                "Tabel ini mengaplikasikan teknik pemetaan gradien warna untuk mengidentifikasi konsentrasi dan disparitas indikator lintas wilayah.", html.Br(),
                 html.Ul([
-                    html.Li([html.Span("🟩 Gradient Hijau (PDRB / Perputaran Uang):", style={"fontWeight": "bold", "color": "#059669"}), " Indikator kekayaan makro. Semakin pekat warna hijaunya, semakin besar kue ekonomi daerah tersebut."]),
-                    html.Li([html.Span("🟥 Gradient Merah (Miskin, TPT, Gini):", style={"fontWeight": "bold", "color": "#e11d48"}), " Indikator kerentanan. Semakin pekat warna merahnya, kondisinya semakin darurat/buruk (banyak pengangguran atau sangat timpang)."]),
-                    html.Li([html.Span("🟦 Gradient Biru (IPM):", style={"fontWeight": "bold", "color": "#0284c7"}), " Indikator kualitas hidup. Semakin pekat birunya, semakin maju pendidikan, kesehatan, dan standar hidupnya."])
+                    html.Li([html.Span("🟩 Gradien Hijau (Kapasitas Fiskal/PDRB):", style={"fontWeight": "bold", "color": "#059669"}), " Merepresentasikan skala output makroekonomi wilayah."]),
+                    html.Li([html.Span("🟥 Gradien Merah (Indikator Kerentanan):", style={"fontWeight": "bold", "color": "#e11d48"}), " Semakin pekat warna merah, semakin tinggi tingkat urgensi pada indikator kemiskinan, ketimpangan (Gini), maupun pengangguran (TPT)."]),
+                    html.Li([html.Span("🟦 Gradien Biru (Kualitas Modal Manusia):", style={"fontWeight": "bold", "color": "#0284c7"}), " Merepresentasikan tingkat kemajuan indeks komposit IPM."])
                 ], style={"marginTop": "8px", "marginBottom": "0"})
-            ], className="insight-box", style={"marginBottom": "25px"}), # Margin bawah ditambahkan di sini
+            ], className="insight-box", style={"marginBottom": "25px"}),
             
             html.Div([
-                html.B(f"Tabel Indikator Ekonomi & Kesejahteraan ({sel_year})", style={"fontSize": "15px", "display": "block", "marginBottom": "15px"}),
+                html.B(f"Matriks Indikator Kesejahteraan Multidimensi ({sel_year})", style={"fontSize": "15px", "display": "block", "marginBottom": "15px"}),
                 dash_table.DataTable(
                     data=df_display.to_dict('records'), 
                     columns=[{'name': i, 'id': i} for i in df_display.columns],
+                    cell_selectable=False, # <--- BUG FIX: BIKIN TABEL GAK MERAH PAS DIKLIK
                     style_table={'overflowX': 'auto', 'borderRadius': '10px', 'border': '1px solid #e2e8f0'},
                     style_header={'backgroundColor': '#f8fafc', 'fontWeight': 'bold', 'color': '#1e293b', 'padding': '12px'},
                     style_cell={'textAlign': 'left', 'padding': '12px', 'fontFamily': 'Poppins', 'borderBottom': '1px solid #e2e8f0'},
-                    page_size=15, # MENAMPILKAN LEBIH BANYAK BARIS SEKARANG (15 baris)
-                    style_data_conditional=color_styles # MASUKKAN WARNA GRADIENT KE SINI
+                    page_size=15, 
+                    style_data_conditional=color_styles 
                 )
             ], className="card-custom"),
             
-            dbc.Row([
+                dbc.Row([
                 dbc.Col(html.Div([
-                    html.Div("🔥 Matriks Korelasi Ekonomi", className="sec-title", style={"fontSize": "15px"}),
+                    html.Div("🔥 Matriks Korelasi Kesejahteraan Multidimensi", className="sec-title", style={"fontSize": "15px"}),
                     dcc.Graph(figure=fig_heat, config={'displayModeBar': False}),
+                    
                     html.Div([
-                        html.B("📖 Cara Membaca Matriks Korelasi:"), html.Br(),
-                        "Angka di dalam kotak berkisar antara -1.00 hingga +1.00.", html.Br(),
-                        "🟥 Merah/Pink (Korelasi Searah): Jika satu indikator naik, temannya ikut naik.", html.Br(),
-                        "🟦 Biru/Teal (Korelasi Berlawanan): Jika satu indikator naik, temannya malah turun."
+                        html.B("Interpretasi Matriks: "), 
+                        "Matriks korelasi ini memetakan kekuatan hubungan antarindikator makro menggunakan koefisien korelasi linear. Nilai positif menunjukkan hubungan searah antarvariabel, sedangkan nilai negatif menunjukkan hubungan berlawanan arah yang mencerminkan adanya perbedaan tren perkembangan antarindikator."
                     ], className="insight-box")
                 ], className="card-custom"), width=7),
                 
                 dbc.Col(html.Div([
-                    html.Div("🚨 Analisis Ketimpangan & Pusat Ekonomi", className="sec-title", style={"fontSize": "15px"}),
+                    html.Div("🚨 Deteksi Anomali: Evaluasi Inklusivitas Pusat Pertumbuhan", className="sec-title", style={"fontSize": "15px"}),
                     html.Div([
-                        html.B(f"Sorotan Otomatis: {nama_daerah} ({sel_year})"), html.Br(), html.Br(),
-                        "Sistem melacak daerah dengan PDRB terbesar, lalu menguji apakah kekayaannya dinikmati merata oleh warganya.", html.Br(), html.Br(),
+                        html.B(f"Fokus Observasi: {nama_daerah} ({sel_year})"), html.Br(), html.Br(),
+                        "Algoritma mengisolasi wilayah dengan PDRB per kapita absolut tertinggi guna mengevaluasi sejauh mana ekuilibrium (keseimbangan) distribusi kekayaan tercapai.", html.Br(), html.Br(),
                         html.Ul([
-                            html.Li([html.B("Kekuatan Ekonomi: "), f"PDRB per Kapita mencapai {pdrb_val:.1f} Juta Rp."]),
-                            html.Li([html.B("Pemerataan: "), html.I("Gini Ratio "), f"{gini_val:.3f} | Kemiskinan {miskin_val:.2f}%."]),
-                            html.Li([html.B("Status: "), html.Span(status_teks, style={"color": status_warna, "fontWeight": "bold"})])
+                            html.Li([html.B("Kapasitas Ekonomi: "), f"PDRB per Kapita tercatat sebesar {pdrb_val:.1f} Juta Rp."]),
+                            html.Li([html.B("Metrik Distribusi: "), html.I("Gini Ratio "), f"{gini_val:.3f} | Tingkat Kemiskinan {miskin_val:.2f}%."]),
+                            html.Li([html.B("Status Ekstraksi: "), html.Span(status_teks, style={"color": status_warna, "fontWeight": "bold"})])
                         ], style={"paddingLeft": "20px"}),
-                        html.Br(), html.B("Kesimpulan: "), kesimpulan
+                        html.Br(), html.B("Konklusi Analitis: "), kesimpulan
                     ], className=class_box)
                 ], className="card-custom"), width=5)
             ])
@@ -664,15 +758,15 @@ def render_tab2(var_x, var_y, sel_year, sel_kab, theme): # <--- TAMBAH
     kab_max_y = df_filtered.loc[df_filtered[var_y].idxmax(), 'Kabupaten_Kota']
 
     if korelasi > 0.7:
-        kategori_kor, interpretasi, rekomendasi = "Positif Sangat Kuat", "Pembangunan berjalan sangat selaras. Peningkatan di satu indikator secara konsisten diikuti oleh indikator lainnya di hampir seluruh daerah.", "Pertahankan integrasi kebijakan lintas dinas. Alokasi anggaran dapat difokuskan untuk mengangkat daerah-daerah yang posisinya masih jauh di bawah garis tren secara merata."
+        kategori_kor, interpretasi, rekomendasi = "Positif Signifikan (Kuat)", "Integrasi sektoral berjalan sangat selaras. Kemajuan pada indikator X secara konsisten ekuivalen dengan peningkatan indikator Y di mayoritas wilayah.", "Pertahankan integrasi kebijakan lintas sektor. Afirmasi anggaran direkomendasikan bagi wilayah yang posisinya berada jauh di bawah garis regresi linear."
     elif korelasi > 0.3:
-        kategori_kor, interpretasi, rekomendasi = "Positif Moderat", "Ada kecenderungan hubungan yang searah, namun belum sepenuhnya merata. Artinya, beberapa daerah sudah maju di satu sektor, tapi masih tertinggal di sektor lainnya.", "Gunakan pendekatan intervensi spesifik (targeted intervention). Fokuskan investigasi pada daerah 'outlier' yang skornya jomplang antara sumbu X dan Y."
+        kategori_kor, interpretasi, rekomendasi = "Positif Moderat", "Terdapat kecenderungan korelasi searah yang moderat. Hal ini mengindikasikan adanya variasi disparitas, di mana beberapa wilayah unggul di satu sektor namun tertinggal di sektor lain.", "Dibutuhkan pendekatan intervensi spesifik (targeted intervention). Prioritaskan investigasi pada wilayah 'outlier' yang memiliki asimetri skor antara sumbu X dan Y."
     elif korelasi < -0.3:
-        kategori_kor, interpretasi, rekomendasi = "Negatif (Berlawanan Arah)", "Kondisi anomali! Kemajuan di satu sektor justru berbanding terbalik dengan sektor lainnya. Ini mengindikasikan adanya ketimpangan prioritas.", "Lakukan evaluasi fiskal segera. Pastikan tidak ada kebijakan yang bersifat trade-off (memajukan sektor X dengan mengorbankan anggaran sektor Y)."
+        kategori_kor, interpretasi, rekomendasi = "Negatif (Trade-Off)", "Terdeteksi anomali struktural. Peningkatan satu sektor diiringi oleh penurunan sektor lain, mengindikasikan potensi ketimpangan alokasi sumber daya.", "Diperlukan evaluasi fiskal komprehensif. Pastikan tidak ada kebijakan trade-off yang mengorbankan pendanaan sektor Y demi akselerasi sektor X."
     else:
-        kategori_kor, interpretasi, rekomendasi = "Sangat Lemah / Tidak Berpola", "Kedua indikator bergerak secara independen. Kemajuan di satu sektor tidak memberikan efek rambat (spillover effect) ke sektor lainnya.", "Evaluasi program harus dilakukan terpisah per sektor. Peningkatan target di sektor X tidak akan otomatis mengerek naik capaian di sektor Y."
+        kategori_kor, interpretasi, rekomendasi = "Lemah / Tidak Signifikan", "Tidak teridentifikasi pola korelasi linear. Kedua indikator berkembang secara independen tanpa efek rambat (spillover effect) yang nyata.", "Evaluasi program wajib dilakukan secara spesifik per sektor. Peningkatan target di satu indikator tidak akan secara otomatis mengeskalasi capaian di indikator lainnya."
 
-    teks_sorotan = f"{kab_max_x} tampil sebagai benchmark utama karena berhasil mendominasi capaian tertinggi di kedua indikator sekaligus." if kab_max_x == kab_max_y else f"Sebagai perbandingan, {kab_max_x} mencatat rekor tertinggi di sumbu X ({var_x_label}), sementara {kab_max_y} memimpin di sumbu Y ({var_y_label})."
+    teks_sorotan = f"Wilayah {kab_max_x} mendominasi capaian tertinggi pada kedua indikator secara simultan." if kab_max_x == kab_max_y else f"Sebagai perbandingan komparatif, {kab_max_x} mencatat rekor tertinggi di sumbu X ({var_x_label}), sedangkan {kab_max_y} memimpin di sumbu Y ({var_y_label})."
 
     # Penanganan khusus jika User memilih filter Madura atau GKS
     sel_kawasan = df_master[df_master['Kabupaten_Kota'].isin(sel_kab)]['Kawasan'].mode()[0] if len(sel_kab) > 0 else ""
@@ -709,25 +803,32 @@ def render_tab2(var_x, var_y, sel_year, sel_kab, theme): # <--- TAMBAH
         ])
     ])
 
-# ─────────────────────────────────────────────
-# 6. CALLBACK KHUSUS TAB 4 (Machine Learning 3D)
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
+# 6. CALLBACK ANALISIS KLASTER (ACADEMIC VERSION)
+# ---------------------------------------------------------
 @app.callback(
     Output('tab4-output-container', 'children'),
-    [Input('tab4-k-slider', 'value'), Input('filter-tahun', 'value'), Input('filter-kab', 'value'), Input('theme-store', 'data')] # <--- TAMBAH
+    [Input('tab4-k-slider', 'value'), 
+     Input('filter-tahun', 'value'), 
+     Input('filter-kab', 'value'), 
+     Input('theme-store', 'data')]
 )
-def render_tab4(num_clusters, sel_year, sel_kab, theme): # <--- TAMBAH
+def render_tab4(num_clusters, sel_year, sel_kab, theme):
     PLOTLY_TEMPLATE = "plotly_dark" if theme == 'dark' else "plotly_white"
+    # Pengaturan warna dinamis untuk memperbaiki bug Dark Mode
+    bg_color = "#1e293b" if theme == 'dark' else "#f8fafc"
+    border_color = "#334155" if theme == 'dark' else "#e2e8f0"
+    text_color = "#f8fafc" if theme == 'dark' else "#1e293b"
     
     if not num_clusters or df_master.empty or not sel_kab: return dash.no_update
     df_filtered = df_master[(df_master['Tahun'] == sel_year) & (df_master['Kabupaten_Kota'].isin(sel_kab))]
     
     if len(df_filtered) < 5:
-        return html.Div("⚠️ Silakan pilih minimal 5 Kabupaten/Kota di filter atas agar algoritma clustering dapat bekerja secara optimal.", className="warn-box")
+        return html.Div("Peringatan: Diperlukan minimal 5 observasi wilayah agar algoritma pengelompokan dapat beroperasi secara optimal.", className="warn-box")
 
+    # Proses K-Means
     fitur_ml = ['IPM', 'PDRB_Per_Kapita', 'Persentase_Miskin', 'RLS']
     df_ml = df_filtered[['Kabupaten_Kota'] + fitur_ml].copy()
-    
     scaler = StandardScaler()
     data_scaled = scaler.fit_transform(df_ml[fitur_ml])
     
@@ -737,14 +838,18 @@ def render_tab4(num_clusters, sel_year, sel_kab, theme): # <--- TAMBAH
     idx_urut = df_ml.groupby('Cluster_Raw')['IPM'].mean().sort_values().index
     mapping = {old: new for new, old in enumerate(idx_urut)}
     df_ml['Cluster_Urut'] = df_ml['Cluster_Raw'].map(mapping)
-    df_ml['Nama_Cluster'] = "Kelompok " + (df_ml['Cluster_Urut'] + 1).astype(str)
+    df_ml['Nama_Cluster'] = "Klaster " + (df_ml['Cluster_Urut'] + 1).astype(str)
     
     df_plot = pd.merge(df_filtered, df_ml[['Kabupaten_Kota', 'Nama_Cluster']], on='Kabupaten_Kota')
     score = silhouette_score(data_scaled, df_ml['Cluster_Raw'])
 
-    if score > 0.5: msg, warna = "Struktur Klaster Kuat (Sangat Akurat)", "#059669"
-    elif score > 0.25: msg, warna = "Struktur Klaster Cukup (Moderat)", "#d97706"
-    else: msg, warna = "Struktur Klaster Lemah (Data Tumpang Tindih)", "#e11d48"
+    # Evaluasi Akademik Silhouette Score
+    if score > 0.5: 
+        msg, warna = "Struktur Klaster Terdefinisi dengan Baik (Strong)", "#059669"
+    elif score > 0.25: 
+        msg, warna = "Struktur Klaster Terklasifikasi Cukup (Moderate)", "#d97706"
+    else: 
+        msg, warna = "Struktur Klaster Lemah (Data Tumpang Tindih)", "#e11d48"
 
     fig_3d = px.scatter_3d(df_plot, x='PDRB_Per_Kapita', y='Persentase_Miskin', z='IPM', color='Nama_Cluster', text='Kabupaten_Kota', color_discrete_sequence=px.colors.qualitative.Prism)
     fig_3d.update_layout(template=PLOTLY_TEMPLATE, height=500, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
@@ -753,64 +858,62 @@ def render_tab4(num_clusters, sel_year, sel_kab, theme): # <--- TAMBAH
 
     cluster_summaries = []
     for i in range(num_clusters):
-        c_name = f"Kelompok {i+1}"
+        c_name = f"Klaster {i+1}"
         members = df_plot[df_plot['Nama_Cluster'] == c_name]['Kabupaten_Kota'].tolist()
         m_list = ", ".join(members)
         
-        if i == 0: tag, desc = "🔴 PRIORITAS UTAMA", "Wilayah dengan kerentanan sosial-ekonomi tinggi. Membutuhkan intervensi BK Provinsi dan subsidi dasar."
-        elif i == num_clusters - 1: tag, desc = "🟢 MANDIRI/MAJU", "Pusat pertumbuhan ekonomi. Fokus pada iklim investasi dan kemudahan fiskal bagi industri."
-        else: tag, desc = "🟡 BERKEMBANG", "Wilayah transisi. Membutuhkan optimalisasi sektor jasa dan peningkatan kualitas SDM (RLS)."
+        # Penamaan klaster yang lebih akademis
+        if i == 0: 
+            tag, desc = "Prioritas Pengembangan", "Kelompok wilayah dengan karakteristik indeks pembangunan rendah dan tingkat kerentanan ekonomi tinggi. Wilayah ini memerlukan intervensi kebijakan afirmatif."
+        elif i == num_clusters - 1: 
+            tag, desc = "Mandiri dan Terakselerasi", "Kelompok wilayah dengan kapasitas ekonomi makro yang dominan serta kualitas modal manusia yang telah melampaui rata-rata provinsi."
+        else: 
+            tag, desc = "Transisional", "Kelompok wilayah dalam tahap perkembangan menengah yang memerlukan optimalisasi pada sektor jasa dan produktivitas tenaga kerja."
         
         cluster_summaries.append(html.Div([
-            html.B(f"{c_name} ({tag})"), html.Br(),
-            html.Span("🌍 Anggota: ", style={"color": "#0284c7", "fontWeight": "bold"}), html.I(m_list), html.Br(),
-            html.Span("📝 Interpretasi: ", style={"color": "#059669", "fontWeight": "bold"}), desc
-        ], style={"marginBottom": "15px", "paddingBottom": "15px", "borderBottom": "1px solid #e2e8f0"}))
+            html.B(f"{c_name}: {tag}"), html.Br(),
+            html.Span("Anggota Wilayah: ", style={"color": "#0284c7", "fontWeight": "bold"}), html.I(m_list), html.Br(),
+            html.Span("Analisis Karakteristik: ", style={"color": "#059669", "fontWeight": "bold"}), desc
+        ], style={"marginBottom": "15px", "paddingBottom": "15px", "borderBottom": f"1px solid {border_color}", "color": text_color}))
 
     return html.Div([
         dbc.Row([
             dbc.Col(html.Div([
-                html.Div("📊 Silhouette Score", className="kpi-title"),
+                html.Div("Skor Kohesi Klaster (Silhouette)", className="kpi-title"),
                 html.Div(f"{score:.3f}", className="kpi-val", style={"color": "#0284c7"}),
-                html.Div(f"Kualitas: {msg}", className="kpi-sub", style={"color": warna, "fontWeight": "bold", "marginTop": "5px"}),
+                html.Div(msg, className="kpi-sub", style={"color": warna, "fontWeight": "bold", "marginTop": "5px"}),
             ], className="card-custom"), width=4),
             
             dbc.Col(html.Div([
-                html.B("📖 Cara Membaca Evaluasi Model (Penting untuk Sidang/HKI)", style={"fontSize": "14px"}), html.Br(),
-                "Silhouette Score mengukur seberapa mirip sebuah daerah dengan kelompoknya sendiri dibandingkan dengan kelompok lain.", html.Br(),
-                html.Ul([
-                    html.Li([html.B("Mendekati 1: "), "Pengelompokan sangat baik (daerah dalam satu kelompok sangat mirip)."]),
-                    html.Li([html.B("Mendekati 0: "), "Ada daerah yang berada di perbatasan antar kelompok (ambigu)."]),
-                ], style={"marginTop": "5px", "marginBottom": "0"})
-            ], className="info-box", style={"background": "#f8fafc", "padding": "20px", "borderRadius": "12px", "border": "1px solid #e2e8f0", "fontSize": "13px"}), width=8)
+                html.B("Evaluasi Metodologi: Validasi Silhouette Score", style={"fontSize": "14px"}), html.Br(),
+                "Koefisien Silhouette mengukur derajat kemiripan suatu objek dengan klasternya sendiri dibandingkan dengan klaster lain. Skor yang mendekati nilai 1.0 mengindikasikan bahwa proses segmentasi wilayah telah mencapai tingkat ekuilibrium yang optimal.",
+            ], className="info-box", style={"background": bg_color, "color": text_color, "padding": "20px", "borderRadius": "12px", "border": f"1px solid {border_color}", "fontSize": "13px"}), width=8)
         ]),
         
         dbc.Row([
             dbc.Col(html.Div([
-                html.Div("🌌 Pemetaan Ruang 3D Interaktif", className="sec-title", style={"fontSize": "15px"}),
+                html.Div("🌌 Pemetaan Klasterisasi Spasial 3D", className="sec-title", style={"fontSize": "15px"}),
                 dcc.Graph(figure=fig_3d, config={'displayModeBar': False}),
-                html.Div(html.B("💡 Cara Baca 3D: Putar grafik menggunakan mouse. Titik yang berdekatan dalam warna yang sama berarti memiliki kemiripan karakteristik sosial-ekonomi yang kuat."), className="insight-box")
+                html.Div("Analisis Spasial: Posisi kedekatan antar titik merepresentasikan kemiripan profil sosio-ekonomi wilayah berdasarkan variabel IPM, PDRB, dan Kemiskinan.", className="insight-box")
             ], className="card-custom"), width=8),
             
             dbc.Col(html.Div([
-                html.Div("📊 Profil Rata-rata per Kelompok", className="sec-title", style={"fontSize": "15px"}),
+                html.Div("📊 Profil Rerata Indikator per Klaster", className="sec-title", style={"fontSize": "15px"}),
                 dash_table.DataTable(
                     data=profil.to_dict('records'), columns=[{'name': i, 'id': i} for i in profil.columns],
-                    style_table={'overflowX': 'auto', 'borderRadius': '8px', 'border': '1px solid #e2e8f0'},
-                    style_header={'backgroundColor': '#f8fafc', 'fontWeight': 'bold', 'fontSize': '12px'},
-                    style_cell={'textAlign': 'left', 'padding': '8px', 'fontFamily': 'Poppins', 'fontSize': '12px'},
+                    style_table={'overflowX': 'auto', 'borderRadius': '8px', 'border': f"1px solid {border_color}"},
+                    style_header={'backgroundColor': bg_color, 'fontWeight': 'bold', 'color': text_color},
+                    style_cell={'backgroundColor': bg_color, 'color': text_color, 'textAlign': 'left', 'padding': '8px', 'fontSize': '12px'},
                 ),
                 html.Div([
-                    html.B("Cara Baca Tabel Profil:"), html.Br(),
-                    "Bandingkan nilai antar Kelompok (baris).", html.Br(),
-                    html.B("Kelompok 1 (Prioritas): "), "Biasanya memiliki IPM & RLS terendah dengan Kemiskinan tertinggi.", html.Br(),
-                    html.B("Kelompok Tertinggi: "), "Memiliki PDRB & IPM tertinggi."
-                ], style={"marginTop": "15px", "fontSize": "12.5px", "color": "#64748b"})
+                    html.B("Panduan Komparasi:"), html.Br(),
+                    "Perbedaan nilai rerata antarbaris menunjukkan spesialisasi masalah di tiap klaster. Klaster dengan nilai IPM terendah direkomendasikan menjadi fokus program pengentasan kemiskinan struktural."
+                ], style={"marginTop": "15px", "fontSize": "12.5px", "color": "#64748b" if theme == 'light' else "#94a3b8"})
             ], className="card-custom"), width=4)
         ]),
         
         html.Div([
-            html.Div("🧠 Interpretasi AI terhadap Klaster yang Terbentuk", className="sec-title", style={"fontSize": "15px"}),
+            html.Div("🧠 Analisis Karakteristik Klaster Wilayah", className="sec-title", style={"fontSize": "15px"}),
             html.Div(cluster_summaries, style={"fontSize": "13.5px"})
         ], className="card-custom")
     ])
