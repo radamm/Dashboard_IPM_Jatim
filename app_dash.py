@@ -23,7 +23,8 @@ app = dash.Dash(
 
 app.title = "Dashboard IPM Jawa Timur"
 
-# CARA BENAR INJECT CSS DI DASH (Tanpa bikin folder assets)
+server = app.server
+
 app.index_string = '''
 <!DOCTYPE html>
 <html>
@@ -114,31 +115,6 @@ import os
 import json
 import urllib.request
 
-# --- MESIN AUTO-DOWNLOAD PETA INDONESIA (ANTI-GAGAL) ---
-geojson_path = "peta_kabupaten.json"
-if not os.path.exists(geojson_path):
-    print("⏳ Mendownload file Peta...")
-    # Menggunakan Repo TheMaggieSimpson yang sudah terbukti awet
-    url = "https://raw.githubusercontent.com/TheMaggieSimpson/IndonesiaGeoJSON/main/kota-kabupaten.json"
-    try:
-        # Menambahkan User-Agent agar tidak diblokir/404 oleh server GitHub
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as response, open(geojson_path, 'wb') as out_file:
-            out_file.write(response.read())
-        print("✅ Peta berhasil didownload!")
-    except Exception as e:
-        print(f"⚠️ Gagal download peta: {e}")
-
-# Load file GeoJSON ke dalam memori
-geojson_jatim = {}
-if os.path.exists(geojson_path):
-    with open(geojson_path, "r", encoding="utf-8") as f:
-        geojson_jatim = json.load(f)
-
-# Standarisasi Nama untuk Peta (Menghapus kata KOTA/KABUPATEN agar cocok dengan peta)
-if not df_master.empty:
-    df_master['Nama_Peta'] = df_master['Kabupaten_Kota'].str.upper().str.replace('KOTA ', '').str.replace('KABUPATEN ', '').str.strip()
-    
 # ─────────────────────────────────────────────
 # 3. LAYOUT UTAMA (Sidebar L-Shape & Top Navbar)
 # ─────────────────────────────────────────────
@@ -393,8 +369,8 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
 
     df_filtered = df_master[(df_master['Tahun'] == sel_year) & (df_master['Kabupaten_Kota'].isin(sel_kab))]
     
-    # ---------------------------------------------------------
-    # TAB 1: EXECUTIVE SUMMARY (REVISI FINAL: PETA + NO SCROLL + INSIGHT MENDALAM)
+# ---------------------------------------------------------
+    # TAB 1: EXECUTIVE SUMMARY (TANPA PETA - SUPER RINGAN)
     # ---------------------------------------------------------
     if tab == 'tab-1':
         avg_ipm = df_filtered['IPM'].mean()
@@ -404,51 +380,30 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
         
         PLOTLY_TEMPLATE = "plotly_dark" if theme == 'dark' else "plotly_white"
         
-        # 1. Peta Choropleth
-        df_filtered['Nama_Peta_Fix'] = df_filtered['Kabupaten_Kota'].str.title()
-        fig_map = px.choropleth(
-            df_filtered,
-            geojson=geojson_jatim,
-            locations='Nama_Peta_Fix', 
-            featureidkey="properties.NAME_2", 
-            color='IPM',
-            color_continuous_scale="Teal" if theme == 'dark' else "Blues",
-            hover_name='Kabupaten_Kota',
-            hover_data={'Nama_Peta_Fix': False, 'IPM': True, 'Persentase_Miskin': True}
-        )
-        fig_map.update_geos(fitbounds="locations", visible=False)
-        fig_map.update_layout(template=PLOTLY_TEMPLATE, height=400, margin=dict(l=0, r=0, t=10, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-
-        # 2. Grafik Peringkat (Tanpa Scroll + GARIS RATA-RATA KEMBALI)
+        # 1. Grafik Peringkat (Full Lebar + GARIS RATA-RATA)
         df_bar = df_filtered.sort_values(by="IPM", ascending=True)
         fig_bar = px.bar(df_bar, x="IPM", y="Kabupaten_Kota", orientation='h', text="IPM", color="IPM", color_continuous_scale="Teal")
-        
-        # Tambahkan Garis Rata-rata
         rata_ipm_sekarang = df_filtered['IPM'].mean()
         fig_bar.add_vline(x=rata_ipm_sekarang, line_dash="dash", line_color="#ef4444", annotation_text=f"Rata-rata: {rata_ipm_sekarang:.2f}", annotation_position="bottom right")
-        
         fig_bar.update_traces(texttemplate='%{text:.2f}', textposition='outside')
         fig_bar.update_layout(
-            template=PLOTLY_TEMPLATE, height=400, margin=dict(l=0, r=30, t=10, b=0), 
+            template=PLOTLY_TEMPLATE, height=450, margin=dict(l=0, r=30, t=10, b=0), 
             showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
             yaxis={'categoryorder':'total ascending', 'tickfont': {'size': 9}}
         )
 
-        # 3. Tren IPM Jatim (+ GARIS COVID KEMBALI)
+        # 2. Tren IPM Jatim (+ GARIS COVID)
         df_prov = pd.DataFrame(PROV_TREND)
         fig_line = px.line(df_prov, x="years", y="ipm", markers=True)
         fig_line.update_traces(line_color="#0284c7", line_width=4, marker=dict(size=10, color="#059669"))
-        
-        # Tambahkan Garis Puncak Covid
         fig_line.add_vline(x=2020, line_dash="dot", line_color="#e11d48", annotation_text="Puncak COVID-19", annotation_position="top right", annotation_font_color="#e11d48")
-        
         fig_line.update_layout(template=PLOTLY_TEMPLATE, height=350, margin=dict(l=0, r=0, t=10, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
 
-        # 4. Grafik Anomali
+        # 3. Grafik Anomali
         fig_scatter = px.scatter(df_filtered, x="PDRB_Per_Kapita", y="IPM", size="Persentase_Miskin", color="Kawasan", hover_name="Kabupaten_Kota")
         fig_scatter.update_layout(template=PLOTLY_TEMPLATE, height=350, margin=dict(l=0, r=0, t=10, b=0), showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
 
-        # 5. Konvergensi & Teks Insight
+        # 4. Konvergensi & Teks Insight
         if sel_year == 2019:
             konvergensi_content = html.Div("ℹ️ Silakan pilih tahun selain 2019 di Panel Kontrol atas untuk melihat laju konvergensi (kecepatan mengejar ketertinggalan).", className="insight-box")
         else:
@@ -466,12 +421,11 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
             fig_conv.update_traces(texttemplate='+%{text:.2f}%', textposition='outside')
             fig_conv.update_layout(template=PLOTLY_TEMPLATE, height=420, margin=dict(l=0, r=40, t=10, b=0), coloraxis_showscale=False, xaxis_title="% Mengejar Target (Benchmark: IPM 85)", yaxis_title="", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis={'tickfont': {'size': 9}})
             
-            # --- TEKS INSIGHT KONVERGENSI ---
             konvergensi_content = html.Div([
                 dcc.Graph(figure=fig_conv, config={'displayModeBar': False}),
                 html.Div([
                     html.B("Insight Novelty: Mengukur 'Akselerasi Kejar-kejaran'."), html.Br(),
-                    "Indeks ini menggunakan benchmark IPM 85 sebagai standar ideal. Jika sebuah daerah memiliki angka ", html.B("+25%"), ", artinya mereka telah berhasil memangkas 25% jarak ketertinggalan mereka menuju standar ideal sejak 2019. Daerah dengan skor rendah meskipun IPM-nya tinggi menandakan adanya stagnasi pertumbuhan pembangunan."
+                    "Indeks ini menggunakan benchmark IPM 85 sebagai standar ideal. Jika sebuah daerah memiliki angka ", html.B("+25%"), ", artinya mereka telah berhasil memangkas 25% jarak ketertinggalan mereka menuju standar ideal sejak 2019."
                 ], className="insight-box", style={"fontSize": "12.5px"})
             ])
 
@@ -484,16 +438,12 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
                 dbc.Col(html.Div([html.Div("IPM Terendah", className="kpi-title"), html.Div(f"{kab_terendah['IPM']:.2f}", className="kpi-val", style={"color": "#f59e0b"}), html.Div(f"⚠️ {kab_terendah['Kabupaten_Kota']}", className="kpi-sub")], className="card-custom"), width=3),
             ]),
             
-            # Baris 1: Peta & Peringkat
+            # Baris 1: Peringkat IPM Jadi Lebar Penuh (Kelihatan Lebih Megah)
             dbc.Row([
-                dbc.Col(html.Div([
-                    html.Div(f"🗺️ Peta Kesejahteraan Jatim", className="sec-title"),
-                    dcc.Graph(figure=fig_map, config={'displayModeBar': False})
-                ], className="card-custom"), width=7),
                 dbc.Col(html.Div([
                     html.Div(f"🏆 Peringkat IPM", className="sec-title"),
                     dcc.Graph(figure=fig_bar, config={'displayModeBar': False})
-                ], className="card-custom"), width=5),
+                ], className="card-custom"), width=12),
             ]),
             
             # Baris 2: Tren & Anomali (Dengan Insight Sejajar)
@@ -501,10 +451,9 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
                 dbc.Col(html.Div([
                     html.Div("📈 Tren IPM Provinsi", className="sec-title"), 
                     dcc.Graph(figure=fig_line, config={'displayModeBar': False}),
-                    # --- TEKS INSIGHT TREN IPM (BARU) ---
                     html.Div([
                         html.B("Insight Tren: "), 
-                        "Meskipun sempat mengalami tekanan dan stagnasi saat ", html.B("Puncak Pandemi (2020)"), ", tren pembangunan manusia di Jawa Timur menunjukkan resiliensi (daya tahan) yang tinggi dengan kurva yang kembali terakselerasi positif di tahun-tahun berikutnya."
+                        "Meskipun sempat mengalami tekanan saat ", html.B("Puncak Pandemi (2020)"), ", tren pembangunan manusia di Jawa Timur menunjukkan resiliensi dengan kurva yang kembali positif di tahun-tahun berikutnya."
                     ], className="insight-box", style={"fontSize": "12.5px"})
                 ], className="card-custom"), width=5),
                 
@@ -513,7 +462,7 @@ def render_content(tab, sel_year, sel_kab, theme): # <--- TAMBAH 'theme'
                     dcc.Graph(figure=fig_scatter, config={'displayModeBar': False}),
                     html.Div([
                         html.B("Interpretasi Paradoks: "), 
-                        "Makin kanan posisi daerah (kaya), idealnya makin atas posisinya (maju). Titik yang berada jauh di ", html.B("Kanan Bawah"), " mengindikasikan PDRB sangat tinggi namun IPM rendah. Ini berarti perputaran uang diduga hanya dinikmati industri besar tanpa terinvestasi kembali ke warga lokal."
+                        "Makin kanan posisi daerah (kaya), idealnya makin atas posisinya (maju). Titik di ", html.B("Kanan Bawah"), " mengindikasikan PDRB sangat tinggi namun IPM rendah. Uang diduga hanya dinikmati industri besar."
                     ], className="insight-box", style={"fontSize": "12.5px"})
                 ], className="card-custom"), width=7),
             ]),
