@@ -1,6 +1,6 @@
-streamlit
+dash
+dash-bootstrap-components
 pandas
-plotly
 scikit-learn
-matplotlib
-streamlit-antd-components
+plotly
+gunicorn
